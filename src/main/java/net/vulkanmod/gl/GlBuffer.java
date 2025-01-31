@@ -1,5 +1,7 @@
 package net.vulkanmod.gl;
 
+// TODO: This class is only used to emulate a CPU buffer for texture copying purposes
+//  any other use is not supported
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.system.MemoryUtil;
@@ -12,8 +14,8 @@ import java.nio.IntBuffer;
 public class GlBuffer {
     private static int ID_COUNTER = 1;
     private static final Int2ReferenceOpenHashMap<GlBuffer> map = new Int2ReferenceOpenHashMap<>();
-    private static int boundId = 0;
     private static GlBuffer boundBuffer;
+    private static int boundId;
 
     private static GlBuffer pixelPackBufferBound;
     private static GlBuffer pixelUnpackBufferBound;

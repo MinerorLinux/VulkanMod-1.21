@@ -21,6 +21,7 @@ import net.vulkanmod.render.chunk.build.light.data.QuadLightData;
 import net.vulkanmod.render.chunk.build.thread.BuilderResources;
 import net.vulkanmod.render.model.quad.QuadUtils;
 import net.vulkanmod.render.model.quad.QuadView;
+import net.vulkanmod.render.model.quad.ModelQuadView;
 import net.vulkanmod.render.vertex.TerrainBufferBuilder;
 import net.vulkanmod.render.vertex.VertexUtil;
 import net.vulkanmod.vulkan.util.ColorUtil;
@@ -72,12 +73,12 @@ public class BlockRenderer {
     }
 
     public void tessellateBlock(BakedModel bakedModel, TerrainBufferBuilder bufferBuilder, long seed) {
-        Vec3 offset = blockState.getOffset(resources.region, blockPos);
+        Vec3 offset = blockState.getOffset(resources.getRegion(), blockPos);
 
         pos.add((float) offset.x, (float) offset.y, (float) offset.z);
 
         boolean useAO = Minecraft.useAmbientOcclusion() && blockState.getLightEmission() == 0 && bakedModel.useAmbientOcclusion();
-        LightPipeline lightPipeline = useAO ? resources.smoothLightPipeline : resources.flatLightPipeline;
+        LightPipeline lightPipeline = useAO ? BuilderResources.smoothLightPipeline : BuilderResources.flatLightPipeline;
 
         //noinspection ForLoopReplaceableByForEach
         for (int i = 0; i < DIRECTIONS.length; ++i) {
@@ -106,8 +107,8 @@ public class BlockRenderer {
 
         for (int i = 0; i < quads.size(); ++i) {
             BakedQuad bakedQuad = quads.get(i);
-            QuadView quadView = (QuadView) bakedQuad;
-            lightPipeline.calculate(quadView, blockPos, quadLightData, cullFace, bakedQuad.getDirection(), bakedQuad.isShade());
+            QuadView quadView = (QuadView)bakedQuad;
+            lightPipeline.calculate((ModelQuadView)quadView, blockPos, quadLightData, cullFace, bakedQuad.getDirection(), bakedQuad.isShade());
             putQuadData(bufferBuilder, quadView, quadLightData);
         }
     }
@@ -115,7 +116,7 @@ public class BlockRenderer {
     private void putQuadData(TerrainBufferBuilder bufferBuilder, QuadView quadView, QuadLightData quadLightData) {
         float r, g, b;
         if (quadView.isTinted()) {
-            int color = blockColors.getColor(blockState, resources.region, blockPos, quadView.getColorIndex());
+            int color = blockColors.getColor(blockState, resources.getRegion(), blockPos, quadView.getColorIndex());
             r = ColorUtil.ARGB.unpackR(color);
             g = ColorUtil.ARGB.unpackG(color);
             b = ColorUtil.ARGB.unpackB(color);
@@ -171,7 +172,7 @@ public class BlockRenderer {
     }
 
     public boolean shouldRenderFace(BlockState blockState, Direction direction, BlockPos adjPos) {
-        BlockGetter blockGetter = resources.region;
+        BlockGetter blockGetter = resources.getRegion();
         BlockState adjBlockState = blockGetter.getBlockState(adjPos);
 
         if (blockState.skipRendering(adjBlockState, direction)) {

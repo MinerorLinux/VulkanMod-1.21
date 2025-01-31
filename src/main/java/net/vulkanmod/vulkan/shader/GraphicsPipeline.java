@@ -15,7 +15,9 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.List;
+import java.util.function.ToLongFunction;
 
+import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -44,7 +46,7 @@ public class GraphicsPipeline extends Pipeline {
 
         if (builder.renderPass != null)
             graphicsPipelines.computeIfAbsent(PipelineState.DEFAULT,
-                    state -> createGraphicsPipeline((PipelineState)state));
+                    (ToLongFunction<PipelineState>) this::createGraphicsPipeline);
 
         createDescriptorSets(Renderer.getFramesNum());
 
@@ -52,7 +54,7 @@ public class GraphicsPipeline extends Pipeline {
     }
 
     public long getHandle(PipelineState state) {
-        return graphicsPipelines.computeIfAbsent(state, state1 -> createGraphicsPipeline((PipelineState)state1));
+        return graphicsPipelines.computeIfAbsent(state, (ToLongFunction<PipelineState>) this::createGraphicsPipeline);
     }
 
     private long createGraphicsPipeline(PipelineState state) {
@@ -163,10 +165,15 @@ public class GraphicsPipeline extends Pipeline {
             VkPipelineDynamicStateCreateInfo dynamicStates = VkPipelineDynamicStateCreateInfo.calloc(stack);
             dynamicStates.sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
 
-            if (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST || polygonMode == VK_POLYGON_MODE_LINE)
-                dynamicStates.pDynamicStates(stack.ints(VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH));
-            else
-                dynamicStates.pDynamicStates(stack.ints(VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR));
+            if (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST || polygonMode == VK_POLYGON_MODE_LINE) {
+                dynamicStates.pDynamicStates(
+                        stack.ints(VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
+                                   VK_DYNAMIC_STATE_LINE_WIDTH));
+            }
+            else {
+                dynamicStates.pDynamicStates(
+                        stack.ints(VK_DYNAMIC_STATE_DEPTH_BIAS, VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR));
+            }
 
             VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
             pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
@@ -198,10 +205,8 @@ public class GraphicsPipeline extends Pipeline {
 
             LongBuffer pGraphicsPipeline = stack.mallocLong(1);
 
-            int result = vkCreateGraphicsPipelines(DeviceManager.vkDevice, PIPELINE_CACHE, pipelineInfo, null, pGraphicsPipeline);
-            if (result != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create graphics pipeline, error code: " + result);
-            }
+            Vulkan.checkResult(vkCreateGraphicsPipelines(DeviceManager.vkDevice, PIPELINE_CACHE, pipelineInfo, null, pGraphicsPipeline),
+                               "Failed to create graphics pipeline " + this.name);
 
             return pGraphicsPipeline.get(0);
         }
@@ -259,12 +264,8 @@ public class GraphicsPipeline extends Pipeline {
 
     private static VkVertexInputAttributeDescription.Buffer getAttributeDescriptions(VertexFormat vertexFormat) {
         List<VertexFormatElement> elements = vertexFormat.getElements();
-
         int size = elements.size();
-
         VkVertexInputAttributeDescription.Buffer attributeDescriptions = VkVertexInputAttributeDescription.calloc(size);
-
-        int offset = 0;
 
         for (int i = 0; i < size; ++i) {
             VkVertexInputAttributeDescription posDescription = attributeDescriptions.get(i);
@@ -279,131 +280,29 @@ public class GraphicsPipeline extends Pipeline {
             switch (usage) {
                 case POSITION -> {
                     switch (type) {
-                        case FLOAT -> {
-                            posDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
-                            posDescription.offset(offset);
-
-                            offset += 12;
-                        }
-                        case SHORT -> {
-                            posDescription.format(VK_FORMAT_R16G16B16A16_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 8;
-                        }
-                        case BYTE -> {
-                            posDescription.format(VK_FORMAT_R8G8B8A8_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 4;
-                        }
-                        case UBYTE -> {
-                            posDescription.format(VK_FORMAT_R8G8B8A8_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 4;
-                        }
-                        case UINT -> {
-                            posDescription.format(VK_FORMAT_R32G32B32_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 12;
-                        }
-                        case INT -> {
-                            posDescription.format(VK_FORMAT_R32G32B32_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 12;
-                        }
-                        case USHORT -> {
-                            posDescription.format(VK_FORMAT_R16G16B16A16_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 8;
-                        }
+                        case FLOAT -> posDescription.format(VK_FORMAT_R32G32B32_SFLOAT);
+                        case SHORT -> posDescription.format(VK_FORMAT_R16G16B16A16_SINT);
+                        case BYTE -> posDescription.format(VK_FORMAT_R8G8B8A8_SINT);
                     }
-
                 }
-
-                case COLOR -> {
-                    posDescription.format(VK_FORMAT_R8G8B8A8_UNORM);
-                    posDescription.offset(offset);
-
-                    offset += 4;
-                }
-
+                case COLOR -> posDescription.format(VK_FORMAT_R8G8B8A8_UNORM);
                 case UV -> {
                     switch (type) {
-                        case FLOAT -> {
-                            posDescription.format(VK_FORMAT_R32G32_SFLOAT);
-                            posDescription.offset(offset);
-
-                            offset += 8;
-                        }
-                        case SHORT -> {
-                            posDescription.format(VK_FORMAT_R16G16_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 4;
-                        }
-                        case USHORT -> {
-                            posDescription.format(VK_FORMAT_R16G16_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 4;
-                        }
-                        case UBYTE -> {
-                            posDescription.format(VK_FORMAT_R8G8_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 2;
-                        }
-                        case INT -> {
-                            posDescription.format(VK_FORMAT_R32G32_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 8;
-                        }
-                        case UINT -> {
-                            posDescription.format(VK_FORMAT_R32G32_UINT);
-                            posDescription.offset(offset);
-
-                            offset += 8;
-                        }
-                        case BYTE -> {
-                            posDescription.format(VK_FORMAT_R8G8_SINT);
-                            posDescription.offset(offset);
-
-                            offset += 2;
-                        }
+                        case FLOAT -> posDescription.format(VK_FORMAT_R32G32_SFLOAT);
+                        case SHORT -> posDescription.format(VK_FORMAT_R16G16_SINT);
+                        case USHORT -> posDescription.format(VK_FORMAT_R16G16_UINT);
                     }
                 }
-
-                case NORMAL -> {
-                    posDescription.format(VK_FORMAT_R8G8B8A8_SNORM);
-                    posDescription.offset(offset);
-
-                    offset += 4;
-                }
-
+                case NORMAL -> posDescription.format(VK_FORMAT_R8G8B8A8_SNORM);
                 case GENERIC -> {
                     if (type == VertexFormatElement.Type.SHORT && elementCount == 1) {
                         posDescription.format(VK_FORMAT_R16_SINT);
-                        posDescription.offset(offset);
-
-                        offset += 2;
-                    }
-                    else if (type == VertexFormatElement.Type.INT && elementCount == 1) {
+                    } else if (type == VertexFormatElement.Type.INT && elementCount == 1) {
                         posDescription.format(VK_FORMAT_R32_SINT);
-                        posDescription.offset(offset);
-
-                        offset += 4;
-                    }
-                    else {
+                    } else {
                         throw new RuntimeException(String.format("Unknown format: %s", usage));
                     }
                 }
-
                 default -> throw new RuntimeException(String.format("Unknown format: %s", usage));
             }
 

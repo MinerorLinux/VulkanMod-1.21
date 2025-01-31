@@ -6,14 +6,18 @@ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.vulkanmod.render.chunk.buffer.AreaBuffer;
 import net.vulkanmod.render.chunk.buffer.DrawBuffers;
+import net.vulkanmod.render.chunk.buffer.DrawParameters;
+import net.vulkanmod.render.chunk.buffer.DrawParametersBuffer;
 import net.vulkanmod.render.chunk.build.RenderRegion;
 import net.vulkanmod.render.chunk.build.RenderRegionBuilder;
-import net.vulkanmod.render.chunk.build.TaskDispatcher;
+import net.vulkanmod.render.chunk.build.task.TaskDispatcher;
 import net.vulkanmod.render.chunk.build.task.BuildTask;
 import net.vulkanmod.render.chunk.build.task.ChunkTask;
 import net.vulkanmod.render.chunk.build.task.CompiledSection;
 import net.vulkanmod.render.chunk.build.task.SortTransparencyTask;
+import net.vulkanmod.render.chunk.cull.QuadFacing;
 import net.vulkanmod.render.chunk.graph.GraphDirections;
 import net.vulkanmod.render.chunk.util.Util;
 import net.vulkanmod.render.vertex.TerrainRenderType;
@@ -29,6 +33,7 @@ public class RenderSection {
     public byte frustumIndex;
     public short lastFrame = -1;
     private short lastFrame2 = -1;
+    public short inAreaIndex;
 
     public byte adjDirs;
     public RenderSection
@@ -47,8 +52,6 @@ public class RenderSection {
 
     public int xOffset, yOffset, zOffset;
 
-    private final DrawBuffers.DrawParameters[] drawParametersArray;
-
     // Graph-info
     public byte mainDir;
     public byte directions;
@@ -56,15 +59,13 @@ public class RenderSection {
     public byte steps;
     public byte directionChanges;
 
+    // New field for DrawParameters
+    private final DrawParameters[] drawParameters = new DrawParameters[TerrainRenderType.VALUES.length];
+
     public RenderSection(int index, int x, int y, int z) {
         this.xOffset = x;
         this.yOffset = y;
         this.zOffset = z;
-
-        this.drawParametersArray = new DrawBuffers.DrawParameters[TerrainRenderType.VALUES.length];
-        for (int i = 0; i < this.drawParametersArray.length; ++i) {
-            this.drawParametersArray[i] = new DrawBuffers.DrawParameters();
-        }
     }
 
     public void setOrigin(int x, int y, int z) {
@@ -297,8 +298,20 @@ public class RenderSection {
         return zOffset;
     }
 
-    public DrawBuffers.DrawParameters getDrawParameters(TerrainRenderType renderType) {
-        return drawParametersArray[renderType.ordinal()];
+    public void resetDrawParameters(TerrainRenderType renderType) {
+        for (int i = 0; i < QuadFacing.COUNT; ++i) {
+            DrawBuffers drawBuffers = this.chunkArea.getDrawBuffers();
+            long ptr = DrawParametersBuffer.getParamsPtr(drawBuffers.getDrawParamsPtr(), this.inAreaIndex, renderType.ordinal(), i);
+
+            AreaBuffer areaBuffer = drawBuffers.getAreaBuffer(renderType);
+            int vertexOffset = DrawParametersBuffer.getVertexOffset(ptr);
+            if (areaBuffer != null && vertexOffset != -1) {
+                int segmentOffset = vertexOffset * DrawBuffers.VERTEX_SIZE;
+                areaBuffer.setSegmentFree(segmentOffset);
+            }
+
+            DrawParametersBuffer.resetParameters(ptr);
+        }
     }
 
     public void setChunkArea(ChunkArea chunkArea) {
@@ -339,6 +352,10 @@ public class RenderSection {
         return (byte) (this.visibility >> (Util.getOppositeDirIdx(this.mainDir) << 3));
     }
 
+    public long getVisibility() {
+        return visibility;
+    }
+
     public boolean isCompletelyEmpty() {
         return this.completelyEmpty;
     }
@@ -355,8 +372,7 @@ public class RenderSection {
         Set<BlockEntity> set1;
         Set<BlockEntity> sectionSet;
         synchronized (globalBlockEntitiesMap) {
-            sectionSet = globalBlockEntitiesMap.computeIfAbsent(this,
-                    (section) -> new ObjectOpenHashSet<>());
+            sectionSet = globalBlockEntitiesMap.computeIfAbsent(this, (section) -> new ObjectOpenHashSet<>());
         }
 
         if (sectionSet.size() != fullSet.size() || !sectionSet.containsAll(fullSet)) {
@@ -385,8 +401,12 @@ public class RenderSection {
         if (this.chunkArea == null)
             return;
 
-        for (TerrainRenderType r : TerrainRenderType.VALUES) {
-            this.getDrawParameters(r).reset(this.chunkArea, r);
+        long basePtr = this.chunkArea.getDrawBuffers().getDrawParamsPtr();
+        for (TerrainRenderType renderType : TerrainRenderType.VALUES) {
+            for (QuadFacing facing : QuadFacing.VALUES) {
+                long ptr = DrawParametersBuffer.getParamsPtr(basePtr, this.inAreaIndex, renderType.ordinal(), facing.ordinal());
+                DrawParametersBuffer.resetParameters(ptr);
+            }
         }
     }
 
@@ -416,6 +436,14 @@ public class RenderSection {
 
     public short getLastFrame() {
         return this.lastFrame;
+    }
+
+    public short getLastFrame2() {
+        return this.lastFrame2;
+    }
+
+    public DrawParameters getDrawParameters(TerrainRenderType renderType) {
+        return drawParameters[renderType.ordinal()];
     }
 
     static class CompileStatus {

@@ -18,6 +18,7 @@ public abstract class MTextureManager {
     @Shadow @Final private Set<Tickable> tickableTextures;
 
     /**
+     * @reason Overwriting to implement custom texture manager tick logic
      * @author
      */
     @Overwrite

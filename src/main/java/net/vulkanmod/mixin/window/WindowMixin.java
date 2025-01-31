@@ -8,6 +8,7 @@ import net.vulkanmod.config.Platform;
 import net.vulkanmod.config.video.VideoModeManager;
 import net.vulkanmod.config.option.Options;
 import net.vulkanmod.config.video.VideoModeSet;
+import net.vulkanmod.config.video.WindowMode;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.VRenderSystem;
 import net.vulkanmod.vulkan.Vulkan;
@@ -89,6 +90,7 @@ public abstract class WindowMixin {
 
     /**
      * @author
+     * @reason To integrate Vulkan vsync settings
      */
     @Overwrite
     public void updateVsync(boolean vsync) {
@@ -98,6 +100,7 @@ public abstract class WindowMixin {
 
     /**
      * @author
+     * @reason To handle custom fullscreen toggle logic
      */
     @Overwrite
     public void toggleFullScreen() {
@@ -107,6 +110,7 @@ public abstract class WindowMixin {
 
     /**
      * @author
+     * @reason To update display settings and handle fullscreen changes
      */
     @Overwrite
     public void updateDisplay() {
@@ -122,6 +126,7 @@ public abstract class WindowMixin {
 
     /**
      * @author
+     * @reason To set the window mode based on configuration
      */
     @Overwrite
     private void setMode() {
@@ -163,7 +168,7 @@ public abstract class WindowMixin {
                 this.wasOnFullscreen = true;
             }
         }
-        else if (config.windowedFullscreen) {
+        else if (config.windowMode == WindowMode.WINDOWED_FULLSCREEN.mode) {
             VideoModeSet.VideoMode videoMode = VideoModeManager.getOsVideoMode();
 
             if (!this.wasOnFullscreen) {

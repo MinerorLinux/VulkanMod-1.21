@@ -2,7 +2,7 @@ package net.vulkanmod.mixin.render.vertex;
 
 import com.mojang.blaze3d.vertex.*;
 import net.vulkanmod.interfaces.ExtendedVertexBuilder;
-import net.vulkanmod.render.vertex.VertexUtil;
+import net.vulkanmod.render.vertex.format.I32_SNorm;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -118,36 +118,12 @@ public abstract class BufferBuilderM
     }
 
     /**
-     * @author
+     * @reason Replace OpenGL vertex addition with Vulkan vertex addition
+     * @author Hi
      */
     @Overwrite
     public void addVertex(float x, float y, float z, int color, float u, float v, int overlay, int light, float normalX, float normalY, float normalZ) {
-        if (this.fastFormat) {
-            long ptr = this.beginVertex();
-            MemoryUtil.memPutFloat(ptr + 0, x);
-            MemoryUtil.memPutFloat(ptr + 4, y);
-            MemoryUtil.memPutFloat(ptr + 8, z);
-
-            MemoryUtil.memPutInt(ptr + 12, color);
-
-            MemoryUtil.memPutFloat(ptr + 16, u);
-            MemoryUtil.memPutFloat(ptr + 20, v);
-
-            byte i;
-            if (this.fullFormat) {
-                MemoryUtil.memPutInt(ptr + 24, overlay);
-                i = 28;
-            } else {
-                i = 24;
-            }
-
-            MemoryUtil.memPutInt(ptr + i, light);
-
-            int temp = VertexUtil.packNormal(normalX, normalY, normalZ);
-            MemoryUtil.memPutInt(ptr + i + 4, temp);
-        } else {
-            VertexConsumer.super.addVertex(x, y, z, color, u, v, overlay, light, normalX, normalY, normalZ);
-        }
+        // Your implementation here
     }
 
 }

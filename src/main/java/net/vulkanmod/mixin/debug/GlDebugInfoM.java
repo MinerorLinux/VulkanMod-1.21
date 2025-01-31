@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.Overwrite;
 public class GlDebugInfoM {
 
     /**
-     * @reason Replace OpenGL vendor info with Vulkan vendor info
      * @author
      */
     @Overwrite
@@ -20,7 +19,6 @@ public class GlDebugInfoM {
     }
 
     /**
-     * @reason Replace OpenGL renderer info with Vulkan renderer info
      * @author
      */
     @Overwrite
@@ -29,7 +27,6 @@ public class GlDebugInfoM {
     }
 
     /**
-     * @reason Replace OpenGL version info with Vulkan driver version info
      * @author
      */
     @Overwrite
@@ -38,7 +35,6 @@ public class GlDebugInfoM {
     }
 
     /**
-     * @reason Provide CPU information from SystemInfo
      * @author
      */
     @Overwrite

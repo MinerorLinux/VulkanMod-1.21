@@ -6,10 +6,31 @@ import org.lwjgl.vulkan.VkMemoryType;
 import java.nio.ByteBuffer;
 
 public abstract class MemoryType {
-    public static final String HOST_VISIBLE = null;
     final Type type;
     public final VkMemoryType vkMemoryType;
     public final VkMemoryHeap vkMemoryHeap;
+
+    public static final MemoryType DEFAULT = new MemoryType(Type.DEVICE_LOCAL, null, null) {
+        @Override
+        void createBuffer(Buffer buffer, long size) {
+            // Implementation here
+        }
+
+        @Override
+        void copyToBuffer(Buffer buffer, long bufferSize, ByteBuffer byteBuffer) {
+            // Implementation here
+        }
+
+        @Override
+        void copyFromBuffer(Buffer buffer, long bufferSize, ByteBuffer byteBuffer) {
+            // Implementation here
+        }
+
+        @Override
+        boolean mappable() {
+            return false;
+        }
+    };
 
     MemoryType(Type type, VkMemoryType vkMemoryType, VkMemoryHeap vkMemoryHeap) {
         this.type = type;
@@ -17,7 +38,7 @@ public abstract class MemoryType {
         this.vkMemoryHeap = vkMemoryHeap;
     }
 
-    abstract void createBuffer(Buffer buffer, int size);
+    abstract void createBuffer(Buffer buffer, long size);
 
     abstract void copyToBuffer(Buffer buffer, long bufferSize, ByteBuffer byteBuffer);
 

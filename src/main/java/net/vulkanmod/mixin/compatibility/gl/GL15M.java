@@ -14,6 +14,7 @@ import java.nio.IntBuffer;
 public class GL15M {
 
     /**
+     * @reason Redirects OpenGL buffer generation to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -23,6 +24,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer binding to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -31,6 +33,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer data setting to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -39,6 +42,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer data setting to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -47,6 +51,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer mapping to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -56,6 +61,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer mapping to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -66,6 +72,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer unmapping to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -75,6 +82,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer deletion to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)
@@ -83,6 +91,7 @@ public class GL15M {
     }
 
     /**
+     * @reason Redirects OpenGL buffer deletion to Vulkan implementation.
      * @author
      */
     @Overwrite(remap = false)

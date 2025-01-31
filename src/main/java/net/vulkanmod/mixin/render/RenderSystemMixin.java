@@ -14,8 +14,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.function.Consumer;
 
@@ -24,23 +22,27 @@ import static com.mojang.blaze3d.systems.RenderSystem.*;
 @Mixin(RenderSystem.class)
 public abstract class RenderSystemMixin {
 
-    @Shadow private static Matrix4f projectionMatrix; // Ensure this field exists in RenderSystem
-    @Shadow private static Matrix4f savedProjectionMatrix; // Ensure this field exists in RenderSystem
-    @Shadow @Final private static Matrix4fStack modelViewStack; // Ensure this field exists in RenderSystem
-    @Shadow private static Matrix4f modelViewMatrix; // Ensure this field exists in RenderSystem
-    @Shadow private static Matrix4f textureMatrix; // Ensure this field exists in RenderSystem
-    @Shadow @Final private static int[] shaderTextures; // Ensure this field exists in RenderSystem
-    @Shadow @Final private static float[] shaderColor; // Ensure this field exists in RenderSystem
-    @Shadow @Final private static Vector3f[] shaderLightDirections; // Ensure this field exists in RenderSystem
-    @Shadow @Final private static float[] shaderFogColor; // Ensure this field exists in RenderSystem
-    @Shadow private static @Nullable Thread renderThread; // Ensure this field exists in RenderSystem
+    @Shadow private static Matrix4f projectionMatrix;
+    @Shadow private static Matrix4f savedProjectionMatrix;
+    @Shadow @Final private static Matrix4fStack modelViewStack;
+    @Shadow private static Matrix4f modelViewMatrix;
+    @Shadow private static Matrix4f textureMatrix;
+
+    @Shadow @Final private static float[] shaderColor;
+    @Shadow @Final private static Vector3f[] shaderLightDirections;
+    @Shadow @Final private static float[] shaderFogColor;
+
+    @Shadow private static @Nullable Thread renderThread;
+
+    @Shadow public static VertexSorting vertexSorting;
+    @Shadow private static VertexSorting savedVertexSorting;
 
     @Shadow
     public static void assertOnRenderThread() {
-        // Ensure this method exists in RenderSystem
     }
 
     /**
+     * @reason Custom implementation for Vulkan
      * @author
      */
     @Overwrite(remap = false)
@@ -51,13 +53,15 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void setupDefaultState(int x, int y, int width, int height) { }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enableColorLogicOp() {
@@ -66,7 +70,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disableColorLogicOp() {
@@ -75,7 +80,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite
     public static void logicOp(GlStateManager.LogicOp op) {
@@ -84,7 +90,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void activeTexture(int texture) {
@@ -92,19 +99,22 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void glGenBuffers(Consumer<Integer> consumer) {}
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void glGenVertexArrays(Consumer<Integer> consumer) {}
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static int maxSupportedTextureSize() {
@@ -112,7 +122,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void clear(int mask, boolean getError) {
@@ -120,7 +131,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void clearColor(float r, float g, float b, float a) {
@@ -128,27 +140,17 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void clearDepth(double d) {
         VRenderSystem.clearDepth(d);
     }
 
-    @Redirect(method = "flipFrame", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSwapBuffers(J)V"), remap = false)
-    private static void removeSwapBuffers(long window) {
-    }
-
     /**
-     * @reason Custom implementation for Vulkan rendering system
-     */
-    @Overwrite(remap = false)
-    public static void viewport(int x, int y, int width, int height) {
-        Renderer.setViewport(x, y, width, height);
-    }
-
-    /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enableScissor(int x, int y, int width, int height) {
@@ -156,7 +158,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disableScissor() {
@@ -164,16 +167,19 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disableDepthTest() {
         assertOnRenderThread();
+        //GlStateManager._disableDepthTest();
         VRenderSystem.disableDepthTest();
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enableDepthTest() {
@@ -182,7 +188,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void depthFunc(int i) {
@@ -191,7 +198,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void depthMask(boolean b) {
@@ -200,7 +208,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void colorMask(boolean red, boolean green, boolean blue, boolean alpha) {
@@ -208,7 +217,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void blendEquation(int i) {
@@ -217,7 +227,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enableBlend() {
@@ -225,7 +236,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disableBlend() {
@@ -233,7 +245,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void blendFunc(GlStateManager.SourceFactor sourceFactor, GlStateManager.DestFactor destFactor) {
@@ -241,7 +254,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void blendFunc(int srcFactor, int dstFactor) {
@@ -249,7 +263,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void blendFuncSeparate(GlStateManager.SourceFactor p_69417_, GlStateManager.DestFactor p_69418_, GlStateManager.SourceFactor p_69419_, GlStateManager.DestFactor p_69420_) {
@@ -257,7 +272,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void blendFuncSeparate(int srcFactorRGB, int dstFactorRGB, int srcFactorAlpha, int dstFactorAlpha) {
@@ -265,7 +281,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enableCull() {
@@ -274,7 +291,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disableCull() {
@@ -283,7 +301,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void polygonMode(final int i, final int j) {
@@ -292,7 +311,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void enablePolygonOffset() {
@@ -301,7 +321,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void disablePolygonOffset() {
@@ -310,7 +331,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void polygonOffset(float p_69864_, float p_69865_) {
@@ -319,7 +341,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void setShaderLights(Vector3f dir0, Vector3f dir1) {
@@ -336,7 +359,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     private static void _setShaderColor(float r, float g, float b, float a) {
@@ -349,7 +373,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void setShaderFogColor(float f, float g, float h, float i) {
@@ -362,7 +387,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void setProjectionMatrix(Matrix4f projectionMatrix, VertexSorting vertexSorting) {
@@ -370,12 +396,14 @@ public abstract class RenderSystemMixin {
         if (!isOnRenderThread()) {
             recordRenderCall(() -> {
                 RenderSystemMixin.projectionMatrix = matrix4f;
+                RenderSystem.vertexSorting = vertexSorting;
 
                 VRenderSystem.applyProjectionMatrix(matrix4f);
                 VRenderSystem.calculateMVP();
             });
         } else {
             RenderSystemMixin.projectionMatrix = matrix4f;
+            RenderSystem.vertexSorting = vertexSorting;
 
             VRenderSystem.applyProjectionMatrix(matrix4f);
             VRenderSystem.calculateMVP();
@@ -384,7 +412,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void setTextureMatrix(Matrix4f matrix4f) {
@@ -401,7 +430,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void resetTextureMatrix() {
@@ -414,7 +444,8 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void applyModelViewMatrix() {
@@ -422,11 +453,13 @@ public abstract class RenderSystemMixin {
         if (!isOnRenderThread()) {
             recordRenderCall(() -> {
                 modelViewMatrix = matrix4f;
+                //Vulkan
                 VRenderSystem.applyModelViewMatrix(matrix4f);
                 VRenderSystem.calculateMVP();
             });
         } else {
             modelViewMatrix = matrix4f;
+
             VRenderSystem.applyModelViewMatrix(matrix4f);
             VRenderSystem.calculateMVP();
         }
@@ -434,18 +467,21 @@ public abstract class RenderSystemMixin {
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     private static void _restoreProjectionMatrix() {
         projectionMatrix = savedProjectionMatrix;
+        vertexSorting = savedVertexSorting;
 
         VRenderSystem.applyProjectionMatrix(projectionMatrix);
         VRenderSystem.calculateMVP();
     }
 
     /**
-     * @reason Custom implementation for Vulkan rendering system
+     * @reason Custom implementation for Vulkan
+     * @author
      */
     @Overwrite(remap = false)
     public static void texParameter(int target, int pname, int param) {

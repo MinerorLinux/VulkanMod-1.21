@@ -5,6 +5,7 @@ import net.vulkanmod.Initializer;
 import net.vulkanmod.vulkan.VRenderSystem;
 import net.vulkanmod.vulkan.Vulkan;
 import net.vulkanmod.vulkan.queue.*;
+import net.vulkanmod.vulkan.memory.MemoryManager;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -22,7 +23,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK12.VK_API_VERSION_1_2;
+import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 public abstract class DeviceManager {
     public static List<Device> availableDevices;
@@ -43,11 +44,21 @@ public abstract class DeviceManager {
     static TransferQueue transferQueue;
     static ComputeQueue computeQueue;
 
+    public static long getPhysicalDeviceAddress() {
+        return physicalDevice.address();
+    }
+
+    public static VkDevice getDevice() {
+        return vkDevice;
+    }
+
     public static void init(VkInstance instance) {
         try {
             DeviceManager.getSuitableDevices(instance);
             DeviceManager.pickPhysicalDevice();
             DeviceManager.createLogicalDevice();
+            // Ensure vkDevice is initialized before calling initializeAllocator
+            MemoryManager.initializeAllocator();
         } catch (Exception e) {
             Initializer.LOGGER.info(getAvailableDevicesInfo());
             throw new RuntimeException(e);
@@ -175,12 +186,8 @@ public abstract class DeviceManager {
             deviceFeatures.sType$Default();
             deviceFeatures.features().samplerAnisotropy(device.availableFeatures.features().samplerAnisotropy());
             deviceFeatures.features().logicOp(device.availableFeatures.features().logicOp());
+            // TODO: Disable indirect draw option if unsupported.
             deviceFeatures.features().multiDrawIndirect(device.isDrawIndirectSupported());
-
-            // Disable indirect draw option if unsupported
-            if (!device.isDrawIndirectSupported()) {
-                deviceFeatures.features().multiDrawIndirect(false);
-            }
 
             // Must not set line width to anything other than 1.0 if this is not supported
             if (device.availableFeatures.features().wideLines()) {
@@ -224,7 +231,7 @@ public abstract class DeviceManager {
             int res = vkCreateDevice(physicalDevice, createInfo, null, pDevice);
             Vulkan.checkResult(res, "Failed to create logical device");
 
-            vkDevice = new VkDevice(pDevice.get(0), physicalDevice, createInfo, VK_API_VERSION_1_2);
+            vkDevice = new VkDevice(pDevice.get(0), physicalDevice, createInfo, VK_API_VERSION_1_3);
 
             graphicsQueue = new GraphicsQueue(stack, indices.graphicsFamily);
             transferQueue = new TransferQueue(stack, indices.transferFamily);
@@ -400,6 +407,10 @@ public abstract class DeviceManager {
         }
 
         return details;
+    }
+
+    public static VkPhysicalDevice getPhysicalDevice() {
+        return physicalDevice;
     }
 
     public static class SurfaceProperties {

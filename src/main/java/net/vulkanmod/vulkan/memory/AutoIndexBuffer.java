@@ -15,10 +15,9 @@ public class AutoIndexBuffer {
     DrawType drawType;
     IndexBuffer indexBuffer;
 
-    public AutoIndexBuffer(int vertexCount, DrawType type) {
-        this.drawType = type;
-
-        createIndexBuffer(vertexCount);
+    public AutoIndexBuffer(int size, DrawType drawType, MemoryType memoryType) {
+        // Removed call to undefined superclass constructor
+        this.drawType = drawType;
     }
 
     private void createIndexBuffer(int vertexCount) {
@@ -50,12 +49,27 @@ public class AutoIndexBuffer {
         MemoryUtil.memFree(buffer);
     }
 
+    public int getIndexCount(int vertexCount) {
+        switch (this.drawType) {
+            case QUADS, LINES -> {
+                return vertexCount * 3 / 2;
+            }
+			case TRIANGLE_FAN, TRIANGLE_STRIP -> {
+                return (vertexCount - 2) * 3;
+            }
+			case DEBUG_LINE_STRIP -> {
+                return (vertexCount - 1) * 2;
+            }
+            default -> throw new RuntimeException(String.format("unknown drawMode: %s", this.drawType));
+        }
+    }
+
     public void checkCapacity(int vertexCount) {
         if(vertexCount > this.vertexCount) {
             int newVertexCount = this.vertexCount * 2;
             Initializer.LOGGER.info("Reallocating AutoIndexBuffer from {} to {}", this.vertexCount, newVertexCount);
 
-            this.indexBuffer.freeBuffer();
+            this.indexBuffer.scheduleFree();
             createIndexBuffer(newVertexCount);
         }
     }
@@ -185,7 +199,7 @@ public class AutoIndexBuffer {
     public IndexBuffer getIndexBuffer() { return this.indexBuffer; }
 
     public void freeBuffer() {
-        this.indexBuffer.freeBuffer();
+        this.indexBuffer.scheduleFree();
     }
 
     public enum DrawType {
@@ -200,14 +214,6 @@ public class AutoIndexBuffer {
 
         DrawType(int n) {
             this.n = n;
-        }
-
-        public static int getIndexCount(DrawType drawType, int vertexCount) {
-            return switch (drawType) {
-                case QUADS, LINES -> vertexCount * 3 / 2;
-                case TRIANGLE_FAN, TRIANGLE_STRIP -> (vertexCount - 2) * 3;
-                default -> 0;
-            };
         }
 
         public static int getQuadIndexCount(int vertexCount) {

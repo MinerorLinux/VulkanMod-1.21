@@ -140,7 +140,7 @@ public class GlRenderbuffer {
         if (this.vulkanImage != null)
             this.vulkanImage.free();
 
-        if (VulkanImage.isDepthFormat(vkFormat))
+        if (this.vulkanImage.isDepthFormat(vkFormat))  // Changed from VulkanImage.isDepthFormat(vkFormat)
             this.vulkanImage = VulkanImage.createDepthImage(vkFormat,
                     width, height,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,

@@ -21,14 +21,25 @@ import static org.lwjgl.vulkan.VK10.*;
 public class UploadManager {
     public static UploadManager INSTANCE;
 
-    public static void createInstance() {
+    static {
+        // Ensure INSTANCE is initialized
         INSTANCE = new UploadManager();
+    }
+
+    public static void createInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new UploadManager();
+        }
     }
 
     Queue queue = DeviceManager.getTransferQueue();
     CommandPool.CommandBuffer commandBuffer;
 
     LongOpenHashSet dstBuffers = new LongOpenHashSet();
+
+    private UploadManager() {
+        // Initialization code here
+    }
 
     public void submitUploads() {
         if (this.commandBuffer == null)
@@ -43,12 +54,11 @@ public class UploadManager {
     }
 
     public void recordUpload(Buffer buffer, long dstOffset, long bufferSize, ByteBuffer src) {
-        beginCommands();
-
-        VkCommandBuffer commandBuffer = this.commandBuffer.getHandle();
-
         StagingBuffer stagingBuffer = Vulkan.getStagingBuffer();
         stagingBuffer.copyBuffer((int) bufferSize, src);
+
+        beginCommands();
+        VkCommandBuffer commandBuffer = this.commandBuffer.getHandle();
 
         if (!this.dstBuffers.add(buffer.getId())) {
             try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -75,7 +85,7 @@ public class UploadManager {
         copyBuffer(src, 0, dst, 0, src.getBufferSize());
     }
 
-    public void copyBuffer(Buffer src, int srcOffset, Buffer dst, int dstOffset, int size) {
+    public void copyBuffer(Buffer src, long srcOffset, Buffer dst, long dstOffset, long size) {
         beginCommands();
 
         VkCommandBuffer commandBuffer = this.commandBuffer.getHandle();

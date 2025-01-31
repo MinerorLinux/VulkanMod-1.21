@@ -20,7 +20,7 @@ public class VertexBufferM {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void constructor(VertexBuffer.Usage usage, CallbackInfo ci) {
-        vbo = new VBO();
+        vbo = new VBO(usage);
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/GlStateManager;_glGenBuffers()I"))
@@ -34,18 +34,21 @@ public class VertexBufferM {
     }
 
     /**
+     * @reason Replace OpenGL buffer binding with Vulkan buffer binding
      * @author
      */
     @Overwrite
     public void bind() {}
 
     /**
+     * @reason Replace OpenGL buffer unbinding with Vulkan buffer unbinding
      * @author
      */
     @Overwrite
     public static void unbind() {}
 
     /**
+     * @reason Replace OpenGL buffer upload with Vulkan buffer upload
      * @author
      */
     @Overwrite
@@ -54,6 +57,7 @@ public class VertexBufferM {
     }
 
     /**
+     * @reason Replace OpenGL index buffer upload with Vulkan index buffer upload
      * @author
      */
     @Overwrite
@@ -62,6 +66,7 @@ public class VertexBufferM {
     }
 
     /**
+     * @reason Replace OpenGL drawing with Vulkan drawing
      * @author
      */
     @Overwrite
@@ -70,6 +75,7 @@ public class VertexBufferM {
     }
 
     /**
+     * @reason Replace OpenGL drawing with Vulkan drawing
      * @author
      */
     @Overwrite
@@ -78,6 +84,7 @@ public class VertexBufferM {
     }
 
     /**
+     * @reason Replace OpenGL buffer closing with Vulkan buffer closing
      * @author
      */
     @Overwrite

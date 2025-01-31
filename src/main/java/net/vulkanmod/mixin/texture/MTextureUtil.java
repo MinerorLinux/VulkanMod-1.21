@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 public class MTextureUtil {
 
     /**
+     * @reason Overwriting to implement custom texture ID generation logic
      * @author
      */
     @Overwrite(remap = false)
@@ -25,6 +26,7 @@ public class MTextureUtil {
     }
 
     /**
+     * @reason Overwriting to implement custom image preparation logic
      * @author
      */
     @Overwrite(remap = false)
@@ -47,6 +49,7 @@ public class MTextureUtil {
 
             image = new VulkanImage.Builder(width, height)
                     .setMipLevels(mipLevels + 1)
+                    .setFormat(internalGlFormat)
                     .setLinearFiltering(false)
                     .setClamp(false)
                     .createVulkanImage();

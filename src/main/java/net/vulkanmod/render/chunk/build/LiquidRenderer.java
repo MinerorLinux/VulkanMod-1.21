@@ -86,7 +86,7 @@ public class LiquidRenderer {
     }
 
     public void tessellate(BlockState blockState, FluidState fluidState, BlockPos blockPos, TerrainBufferBuilder vertexConsumer) {
-        BlockAndTintGetter region = this.resources.region;
+        BlockAndTintGetter region = this.resources.getRegion();
 
         final FluidRenderHandler handler = getFluidRenderHandler(fluidState);
         int color = handler.getFluidColor(region, blockPos, fluidState);
@@ -102,7 +102,7 @@ public class LiquidRenderer {
         final int posZ = blockPos.getZ();
 
         boolean useAO = blockState.getLightEmission() == 0 && Minecraft.useAmbientOcclusion();
-        LightPipeline lightPipeline = useAO ? this.resources.smoothLightPipeline : this.resources.flatLightPipeline;
+        LightPipeline lightPipeline = useAO ? BuilderResources.smoothLightPipeline : BuilderResources.flatLightPipeline;
 
         BlockState downState = getAdjBlockState(region, posX, posY, posZ, Direction.DOWN);
         BlockState upState = getAdjBlockState(region, posX, posY, posZ, Direction.UP);
@@ -410,18 +410,10 @@ public class LiquidRenderer {
             BlockState blockState2 = blockAndTintGetter.getBlockState(blockPos.offset(Direction.UP.getNormal()));
             return fluid.isSame(blockState2.getFluidState().getType()) ? 1.0F : adjFluidState.getOwnHeight();
         } else {
-            return !adjBlockState.isSolid() ? 0.0F : -1.0f;
+            return !adjBlockState.isCollisionShapeFullBlock(blockAndTintGetter, blockPos) ? 0.0F : -1.0f;
         }
     }
 
-    private int calculateNormal(ModelQuad quad) {
-        // TODO
-        Vector3f normal = new Vector3f(quad.getX(1), quad.getY(1), quad.getZ(1))
-                .cross(quad.getX(3), quad.getY(3), quad.getZ(3));
-        normal.normalize();
-
-        return VertexUtil.packNormal(normal.x(), normal.y(), normal.z());
-    }
 
     private void putQuad(ModelQuad quad, TerrainBufferBuilder bufferBuilder, float xOffset, float yOffset, float zOffset, boolean flip) {
         QuadLightData quadLightData = resources.quadLightData;

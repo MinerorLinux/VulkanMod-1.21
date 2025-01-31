@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -20,7 +22,6 @@ import java.nio.IntBuffer;
 public class GlStateManagerM {
 
     /**
-     * @reason Replaces OpenGL texture binding with Vulkan texture binding.
      * @author
      */
     @Overwrite(remap = false)
@@ -29,7 +30,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL blend disable with Vulkan blend disable.
      * @author
      */
     @Overwrite(remap = false)
@@ -39,7 +39,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL blend enable with Vulkan blend enable.
      * @author
      */
     @Overwrite(remap = false)
@@ -49,7 +48,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL blend function with Vulkan blend function.
      * @author
      */
     @Overwrite(remap = false)
@@ -60,7 +58,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL blend function separate with Vulkan blend function separate.
      * @author
      */
     @Overwrite(remap = false)
@@ -71,7 +68,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL scissor test disable with Vulkan scissor test disable.
      * @author
      */
     @Overwrite(remap = false)
@@ -80,14 +76,12 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for enabling scissor test in Vulkan.
      * @author
      */
     @Overwrite(remap = false)
     public static void _enableScissorTest() {}
 
     /**
-     * @reason Replaces OpenGL cull enable with Vulkan cull enable.
      * @author
      */
     @Overwrite(remap = false)
@@ -96,7 +90,6 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL cull disable with Vulkan cull disable.
      * @author
      */
     @Overwrite(remap = false)
@@ -105,16 +98,14 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL viewport setting with Vulkan viewport setting.
      * @author
      */
-    @Overwrite(remap = false)
-    public static void _viewport(int x, int y, int width, int height) {
+    @Redirect(method = "_viewport", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL11;glViewport(IIII)V"), remap = false)
+    private static void _viewport(int x, int y, int width, int height) {
         Renderer.setViewport(x, y, width, height);
     }
 
     /**
-     * @reason Replaces OpenGL scissor box setting with Vulkan scissor box setting.
      * @author
      */
     @Overwrite(remap = false)
@@ -122,8 +113,8 @@ public class GlStateManagerM {
         Renderer.setScissor(x, y, width, height);
     }
 
+    //TODO
     /**
-     * @reason Placeholder for getting error in Vulkan.
      * @author
      */
     @Overwrite(remap = false)
@@ -132,25 +123,26 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL texture image 2D with Vulkan texture image 2D.
      * @author
      */
     @Overwrite(remap = false)
     public static void _texImage2D(int target, int level, int internalFormat, int width, int height, int border, int format, int type, @Nullable IntBuffer pixels) {
+        RenderSystem.assertOnRenderThreadOrInit();
         GlTexture.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels != null ? MemoryUtil.memByteBuffer(pixels) : null);
     }
 
     /**
-     * @reason Placeholder for texture sub-image 2D in Vulkan.
+     * @reason Replace OpenGL texture sub-image functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
     public static void _texSubImage2D(int target, int level, int offsetX, int offsetY, int width, int height, int format, int type, long pixels) {
-
+        RenderSystem.assertOnRenderThreadOrInit();
+        GlTexture.texSubImage2D(target, level, offsetX, offsetY, width, height, format, type, pixels);
     }
 
     /**
-     * @reason Replaces OpenGL active texture with Vulkan active texture.
+     * @reason Replace OpenGL active texture functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -159,7 +151,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL texture parameter with Vulkan texture parameter.
+     * @reason Replace OpenGL texture parameter functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -168,7 +160,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for texture parameter in Vulkan.
+     * @reason Replace OpenGL texture parameter functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -177,7 +169,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL texture level parameter with Vulkan texture level parameter.
+     * @reason Replace OpenGL texture level parameter functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -186,16 +178,18 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for pixel store in Vulkan.
+     * @reason Replace OpenGL pixel store functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
     public static void _pixelStore(int pname, int param) {
         //Used during upload to set copy offsets
+        RenderSystem.assertOnRenderThreadOrInit();
+        GlTexture.pixelStoreI(pname, param);
     }
 
     /**
-     * @reason Replaces OpenGL texture generation with Vulkan texture generation.
+     * @reason Replace OpenGL texture generation functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -205,7 +199,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL texture deletion with Vulkan texture deletion.
+     * @reason Replace OpenGL texture deletion functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -215,7 +209,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL color mask with Vulkan color mask.
+     * @reason Replace OpenGL color mask functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -225,7 +219,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL depth function with Vulkan depth function.
+     * @reason Replace OpenGL depth function functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -235,7 +229,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL clear color with Vulkan clear color.
+     * @reason Replace OpenGL clear color functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -245,14 +239,14 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for clear depth in Vulkan.
+     * @reason Replace OpenGL clear depth functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
     public static void _clearDepth(double d) {}
 
     /**
-     * @reason Replaces OpenGL clear with Vulkan clear.
+     * @reason Replace OpenGL clear functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -262,14 +256,14 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for using program in Vulkan.
+     * @reason Replace OpenGL use program functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
     public static void _glUseProgram(int i) {}
 
     /**
-     * @reason Replaces OpenGL depth test disable with Vulkan depth test disable.
+     * @reason Replace OpenGL disable depth test functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -279,7 +273,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL depth test enable with Vulkan depth test enable.
+     * @reason Replace OpenGL enable depth test functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -289,7 +283,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL depth mask with Vulkan depth mask.
+     * @reason Replace OpenGL depth mask functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -300,7 +294,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL framebuffer generation with Vulkan framebuffer generation.
+     * @reason Replace OpenGL framebuffer generation functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -310,7 +304,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL renderbuffer generation with Vulkan renderbuffer generation.
+     * @reason Replace OpenGL renderbuffer generation functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -320,7 +314,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL framebuffer binding with Vulkan framebuffer binding.
+     * @reason Replace OpenGL bind framebuffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -330,7 +324,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL framebuffer texture 2D with Vulkan framebuffer texture 2D.
+     * @reason Replace OpenGL framebuffer texture functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -340,7 +334,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL renderbuffer binding with Vulkan renderbuffer binding.
+     * @reason Replace OpenGL bind renderbuffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -350,7 +344,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL framebuffer renderbuffer with Vulkan framebuffer renderbuffer.
+     * @reason Replace OpenGL framebuffer renderbuffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -360,7 +354,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL renderbuffer storage with Vulkan renderbuffer storage.
+     * @reason Replace OpenGL renderbuffer storage functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -370,7 +364,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL framebuffer status check with Vulkan framebuffer status check.
+     * @reason Replace OpenGL framebuffer status check functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -380,7 +374,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer generation with Vulkan buffer generation.
+     * @reason Replace OpenGL buffer generation functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -390,7 +384,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer binding with Vulkan buffer binding.
+     * @reason Replace OpenGL bind buffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -400,7 +394,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer data with Vulkan buffer data.
+     * @reason Replace OpenGL buffer data functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -410,7 +404,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer data with Vulkan buffer data.
+     * @reason Replace OpenGL buffer data functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -420,7 +414,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer mapping with Vulkan buffer mapping.
+     * @reason Replace OpenGL map buffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -431,7 +425,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer unmapping with Vulkan buffer unmapping.
+     * @reason Replace OpenGL unmap buffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -441,7 +435,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Replaces OpenGL buffer deletion with Vulkan buffer deletion.
+     * @reason Replace OpenGL delete buffer functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)
@@ -451,7 +445,7 @@ public class GlStateManagerM {
     }
 
     /**
-     * @reason Placeholder for disabling vertex attribute array in Vulkan.
+     * @reason Replace OpenGL disable vertex attribute array functionality with Vulkan equivalent.
      * @author
      */
     @Overwrite(remap = false)

@@ -17,6 +17,7 @@ public abstract class MAbstractTexture {
 
     /**
      * @author
+     * @reason Overwriting to implement custom texture binding logic
      */
     @Overwrite
     public void bind() {
@@ -29,6 +30,7 @@ public abstract class MAbstractTexture {
 
     /**
      * @author
+     * @reason Overwriting to implement custom texture filter logic
      */
     @Overwrite
     public void setFilter(boolean blur, boolean mipmap) {

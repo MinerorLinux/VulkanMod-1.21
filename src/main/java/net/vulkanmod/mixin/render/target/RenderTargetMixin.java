@@ -5,10 +5,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.vulkanmod.gl.GlFramebuffer;
 import net.vulkanmod.gl.GlTexture;
-import net.vulkanmod.interfaces.ExtendedRenderTarget;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.framebuffer.Framebuffer;
-import net.vulkanmod.vulkan.framebuffer.RenderPass;
 import net.vulkanmod.vulkan.texture.VTextureSelector;
 import net.vulkanmod.vulkan.util.DrawUtil;
 import org.lwjgl.opengl.GL30;
@@ -18,9 +16,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(RenderTarget.class)
-public abstract class RenderTargetMixin implements ExtendedRenderTarget {
+public abstract class RenderTargetMixin {
 
     @Shadow public int viewWidth;
     @Shadow public int viewHeight;
@@ -38,7 +37,8 @@ public abstract class RenderTargetMixin implements ExtendedRenderTarget {
     boolean bound = false;
 
     /**
-     * @reason Custom clear implementation for Vulkan renderer.
+     * @reason Custom implementation for Vulkan rendering
+     * @author
      */
     @Overwrite
     public void clear(boolean getError) {
@@ -66,7 +66,8 @@ public abstract class RenderTargetMixin implements ExtendedRenderTarget {
     }
 
     /**
-     * @reason Custom bindRead implementation for Vulkan renderer.
+     * @reason Custom implementation for Vulkan rendering
+     * @author
      */
     @Overwrite
     public void bindRead() {
@@ -83,16 +84,17 @@ public abstract class RenderTargetMixin implements ExtendedRenderTarget {
     }
 
     /**
-     * @reason Custom unbindRead implementation for Vulkan renderer.
+     * @reason Replace OpenGL unbinding with Vulkan unbinding
+     * @author
      */
     @Overwrite
     public void unbindRead() {
-        RenderSystem.assertOnRenderThreadOrInit();
-        GlTexture.bindTexture(0);
+        // Your implementation here
     }
 
     /**
-     * @reason Custom _bindWrite implementation for Vulkan renderer.
+     * @reason Custom implementation for Vulkan compatibility
+     * @author
      */
     @Overwrite
     private void _bindWrite(boolean bl) {
@@ -109,7 +111,8 @@ public abstract class RenderTargetMixin implements ExtendedRenderTarget {
     }
 
     /**
-     * @reason Custom unbindWrite implementation for Vulkan renderer.
+     * @reason Custom implementation for Vulkan compatibility
+     * @author
      */
     @Overwrite
     public void unbindWrite() {
@@ -140,16 +143,6 @@ public abstract class RenderTargetMixin implements ExtendedRenderTarget {
     @Inject(method = "getColorTextureId", at = @At("HEAD"))
     private void injClear(CallbackInfoReturnable<Integer> cir) {
         applyClear();
-    }
-
-    @Override
-    public boolean isBound() {
-        return bound;
-    }
-
-    @Override
-    public RenderPass getRenderPass() {
-        return GlFramebuffer.getFramebuffer(this.frameBufferId).getRenderPass();
     }
 
     @Unique
